@@ -1,8 +1,12 @@
 version: '3.8'
 
 services:
+  # Vanilla Space Engineers Dedicated Server
   se-server:
-    build: .
+    build:
+      context: .
+      args:
+        SERVER_TYPE: vanilla
     image: spaceengineers:latest
     container_name: se-ds-docker
     restart: unless-stopped
@@ -26,4 +30,56 @@ services:
       - WINEDEBUG=-all
       - INSTANCE_NAME=SE
       - PUBLIC_IP=127.0.0.1
+      # Auto-update config when SE updates (optional)
+      # - AUTO_UPDATE_CONFIG=true
+      # Show all available config options on startup (optional)
+      # - SHOW_CONFIG_OPTIONS=true
+      
+      # Environment variable overrides (prefix with SE_)
+      # Automatically maps to SpaceEngineers-Dedicated.cfg fields
+      # - SE_SERVER_NAME=My Awesome Server
+      # - SE_SERVER_DESCRIPTION=Welcome to my server!
+      # - SE_WORLD_NAME=MyWorld
+      # - SE_MAX_PLAYERS=16
+      # - SE_SERVER_PORT=27016
+      # - SE_GAME_MODE=Survival
+      # - SE_SCENARIO_EDIT_MODE=false
+      # - SE_ENABLE_SPECTATOR=false
+
+  # Torch Server (uncomment to use instead of vanilla)
+  # se-torch:
+  #   build:
+  #     context: .
+  #     args:
+  #       SERVER_TYPE: torch
+  #   image: spaceengineers:torch
+  #   container_name: se-torch-docker
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /appdata/space-engineers/instances:/appdata/space-engineers/instances
+  #     - /appdata/space-engineers/SpaceEngineersDedicated:/appdata/space-engineers/SpaceEngineersDedicated
+  #     - /appdata/space-engineers/steamcmd:/root/.steam
+  #   ports:
+  #     - target: 27016
+  #       published: 27016
+  #       protocol: udp
+  #       mode: host
+  #     - target: 8080
+  #       published: 18080
+  #       protocol: tcp
+  #       mode: host
+  #   environment: 
+  #     - WINEDEBUG=-all
+  #     - INSTANCE_NAME=SE
+  #     - PUBLIC_IP=127.0.0.1
+  #     
+  #     # Torch Performance Plugins (installed by default for weak CPUs)
+  #     # - INSTALL_CONCEALMENT=true              # Pauses distant grids (critical for performance)
+  #     # - CONCEALMENT_DISTANCE=8000             # Distance in meters (adjust for long-range drones)
+  #     # - INSTALL_PERFORMANCE_IMPROVEMENTS=true # Viktor's optimization patches
+  #     # - INSTALL_ESSENTIALS=false              # Admin tools & cleanup (opt-in)
+  #     
+  #     # Config overrides work the same way for Torch
+  #     # - SE_SERVER_NAME=Torch Server
+  #     # - SE_MAX_PLAYERS=32
       # public ip required for healthcheck

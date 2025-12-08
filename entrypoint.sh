@@ -4,11 +4,23 @@ GAME_DIR="/appdata/space-engineers/SpaceEngineersDedicated"
 INSTANCES_DIR="/appdata/space-engineers/instances"
 PLUGIN_DIR="/appdata/space-engineers/plugins"
 CONFIG_PATH="${INSTANCES_DIR}/${INSTANCE_NAME}/SpaceEngineers-Dedicated.cfg"
+DEFAULT_CONFIG="${GAME_DIR}/DedicatedServer64/SpaceEngineers-Dedicated.cfg"
 INSTANCE_IP=$(hostname -I | sed "s= ==g")
 
+# Load config helper functions
+source /root/config-helper.sh
 
 echo "-------------------------------INSTALL & UPDATE------------------------------"
 /usr/games/steamcmd +force_install_dir ${GAME_DIR} +login anonymous +@sSteamCmdForcePlatformType windows +app_update 298740 +quit
+
+echo "---------------------------------INITIALIZE CONFIG---------------------------"
+# Initialize config from SE default if needed
+initialize_config "$DEFAULT_CONFIG" "$CONFIG_PATH" "$AUTO_UPDATE_CONFIG"
+
+# Show available options if requested
+if [ "$SHOW_CONFIG_OPTIONS" = "true" ]; then
+    show_available_config "$DEFAULT_CONFIG"
+fi
 
 echo "---------------------------------UPDATE CONFIG-------------------------------"
 # update IP to host external ip
@@ -33,6 +45,10 @@ else
 fi
 
 sed -E -i "s=<Plugins />|<Plugins.*Plugins>=${PLUGINS_STRING}=g" ${CONFIG_PATH}
+
+echo "--------------------------APPLY ENVIRONMENT OVERRIDES------------------------"
+# Apply any SE_ prefixed environment variables to config
+apply_environment_overrides "$CONFIG_PATH"
 
 echo "-----------------------------CURRENT CONFIGURATION---------------------------"
 echo "GAME_DIR=$GAME_DIR"

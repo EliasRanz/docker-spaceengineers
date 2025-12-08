@@ -4,16 +4,34 @@ First of all thanks to [7thCore](https://github.com/7thCore) and [mmmaxwwwell](h
 
 I took parts of their projects to create this one (see credits)
 
+## Features
+
+- ✅ Vanilla Space Engineers Dedicated Server
+- ✅ **Torch Server Support** (modding framework with plugin support)
+- ✅ Automated builds via GitHub Actions
+- ✅ Published to GitHub Container Registry (ghcr.io)
+- ✅ Signed container images with cosign
+- 🐧 Runs on Linux with Wine
+
 ## Why?
 
 I wanted to have a more cleaner docker container with less dependencies (integrate sesrv-script parts instead of wget the whole script) and a little more configuration through composer files.
 
+## Server Variants
+
+This project supports two server types:
+
+| Variant | Description | Image Tag | Use Case |
+|---------|-------------|-----------|----------|
+| **Vanilla** | Official SE Dedicated Server | `latest`, `master` | Standard multiplayer |
+| **Torch** | Torch Server with plugin support | `master-torch` | Modded servers, admin tools |
+
 ## KeyFacts
 
-| Key         | :latest              | :winestaging         |
+| Key         | Vanilla              | Torch                |
 | ----------- | -------------------- | -------------------- |
 | OS          | Debian 12 (Bookworm) | Debian 12 (Bookworm) |
-| Wine        | 9.0~bookworm-1       | 9.9~bookworm-1       |
+| Wine        | 9.0~bookworm-1       | 9.0~bookworm-1       |
 | Docker size | ~1.82GB compressed   | ~1.82GB compressed   |
 | Build Time  | ~ 19 Minutes         | ~ 19 Minutes         |
 
@@ -25,9 +43,213 @@ First you have to use the `Space Engineers Dedicated Server` Tool to setup your 
 
 After you have saved your world upload it (the instance directory) to your docker host machine `/appdata/space-engineers/instances/`.
 
-## Using docker-compose with precompiled docker image (devidian/spaceengineers)
+## Using Pre-built Images from GitHub Container Registry
 
-Create a [docker-compose.yml](docker-compose.yml) (see example below) and execute `docker-compose up -d`
+### Vanilla Server
+
+```yaml
+services:
+  se-server:
+    image: ghcr.io/eliasranz/docker-spaceengineers:latest
+    container_name: se-ds-docker
+    restart: unless-stopped
+    volumes:
+      - /appdata/space-engineers/plugins:/appdata/space-engineers/plugins
+      - /appdata/space-engineers/instances:/appdata/space-engineers/instances
+      - /appdata/space-engineers/SpaceEngineersDedicated:/appdata/space-engineers/SpaceEngineersDedicated
+      - /appdata/space-engineers/steamcmd:/root/.steam
+    ports:
+      - "27016:27016/udp"
+      - "18080:8080/tcp"
+    environment:
+      - WINEDEBUG=-all
+      - INSTANCE_NAME=SE
+      - PUBLIC_IP=127.0.0.1
+```
+
+### Torch Server
+
+```yaml
+services:
+  se-torch:
+    image: ghcr.io/eliasranz/docker-spaceengineers:master-torch
+    container_name: se-torch-docker
+    restart: unless-stopped
+    volumes:
+      - /appdata/space-engineers/instances:/appdata/space-engineers/instances
+      - /appdata/space-engineers/SpaceEngineersDedicated:/appdata/space-engineers/SpaceEngineersDedicated
+      - /appdata/space-engineers/steamcmd:/root/.steam
+    ports:
+      - "27016:27016/udp"
+      - "18080:8080/tcp"
+    environment:
+      - WINEDEBUG=-all
+      - INSTANCE_NAME=SE
+      - PUBLIC_IP=127.0.0.1
+      # Config overrides - prefix with SE_
+      - SE_SERVER_NAME=My Awesome Server
+      - SE_MAX_PLAYERS=16
+      - SE_GAME_MODE=Survival
+      # Performance plugins (see below)
+      - INSTALL_CONCEALMENT=true
+      - CONCEALMENT_DISTANCE=8000
+```
+
+## Torch Performance Plugins
+
+The Torch server includes **automatic installation** of performance-optimizing plugins, ideal for servers with weak CPUs:
+
+### Installed by Default
+
+| Plugin | Purpose | Impact | Default |
+|--------|---------|--------|---------|
+| **Concealment** | Pauses grids when no players nearby | 50-90% sim speed improvement | ✅ Enabled |
+| **Performance Improvements** | Viktor's optimization patches | Fixes game inefficiencies, reduces GC pressure | ✅ Enabled |
+| **Essentials** | Admin tools & automated cleanup | Grid limits, trash removal | ❌ Disabled (opt-in) |
+
+### Plugin Configuration
+
+```yaml
+environment:
+  # Enable/disable plugins
+  - INSTALL_CONCEALMENT=true                # Critical for weak CPUs
+  - INSTALL_PERFORMANCE_IMPROVEMENTS=true   # Recommended for all servers
+  - INSTALL_ESSENTIALS=false                # Optional admin tools
+  
+  # Concealment distance configuration
+  - CONCEALMENT_DISTANCE=8000               # Distance in meters (8km default)
+```
+
+### Concealment Plugin Notes
+
+**Benefits:**
+- Dramatically improves server performance (often 2x sim speed increase)
+- Reduces active grid count by 50-90%
+- Essential for servers with weak CPUs
+
+**Side Effects & Workarounds:**
+- Long-distance autonomous drones may pause outside player range
+  - **Solution:** Increase `CONCEALMENT_DISTANCE` (e.g., 15000 for 15km)
+- Laser antennas between distant grids may disconnect
+  - **Solution:** Adjust distance or exclude grids with beacons from concealment
+- Grids "unconcealed" when players approach (brief activation delay)
+
+**Configuration Examples:**
+
+```yaml
+# Default: Good balance for most servers
+- CONCEALMENT_DISTANCE=8000
+
+# Long-range automation: For servers with autonomous drones
+- CONCEALMENT_DISTANCE=15000
+
+# Disable concealment: If you prefer vanilla behavior
+- INSTALL_CONCEALMENT=false
+```
+
+### Performance Improvements Plugin Notes
+
+**Benefits:**
+- Reduces memory allocations and GC pressure
+- Fixes various game inefficiencies
+- Minimal side effects
+
+**Side Effects:**
+- 2-second cache for safe zone/ownership changes (negligible impact)
+
+### All Plugins are Server-Side Only
+
+✅ Players connect with **vanilla client** - no mods required  
+✅ 100% client-compatible  
+✅ No extra workflow for players
+
+## Configuration
+
+### Auto-Discovery Config System
+
+This project uses an **intelligent configuration system** that automatically adapts to Space Engineers updates:
+
+- ✅ **Extracts default config** from SE installation (always up-to-date)
+- ✅ **Auto-discovers valid fields** from SE's schema
+- ✅ **Validates overrides** before applying
+- ✅ **Warns about deprecated fields** when SE updates
+- ✅ **Suggests alternatives** when fields are renamed
+
+### Environment Variable Overrides
+
+Override any config setting using `SE_` prefixed environment variables:
+
+```yaml
+environment:
+  # Common settings
+  - SE_SERVER_NAME=My Server
+  - SE_SERVER_DESCRIPTION=Welcome to my server!
+  - SE_WORLD_NAME=MyWorld
+  - SE_MAX_PLAYERS=16
+  - SE_SERVER_PORT=27016
+  - SE_GAME_MODE=Survival
+  
+  # Access control
+  - SE_SCENARIO_EDIT_MODE=false
+  - SE_IGNORE_LAST_SESSION=true
+  
+  # Performance
+  - SE_VIEW_DISTANCE=15000
+  - SE_PAUSE_GAME_WHEN_EMPTY=false
+  
+  # Features
+  - SE_ENABLE_SPECTATOR=false
+  - SE_ENABLE_INGAME_SCRIPTS=true
+  - SE_SHOW_PLAYER_NAMES_ON_HUD=true
+```
+
+**Naming Convention:**
+- Environment var: `SE_MAX_PLAYERS` → Config XML: `<MaxPlayers>`
+- Environment var: `SE_SERVER_NAME` → Config XML: `<ServerName>`
+
+### See All Available Options
+
+Set `SHOW_CONFIG_OPTIONS=true` to display all available configuration options on startup:
+
+```yaml
+environment:
+  - SHOW_CONFIG_OPTIONS=true
+```
+
+### Auto-Update Config on SE Updates
+
+When Space Engineers updates and changes the config schema:
+
+```yaml
+environment:
+  - AUTO_UPDATE_CONFIG=true  # Automatically update config from SE's latest default
+```
+
+This will backup your old config and apply the new template.
+
+### Manual Config File
+
+Advanced users can provide their own `SpaceEngineers-Dedicated.cfg`:
+
+1. Place your config in: `/appdata/space-engineers/instances/SE/SpaceEngineers-Dedicated.cfg`
+2. Environment variables will still override specific fields
+3. Container won't overwrite your custom config
+
+## Building Locally
+
+### Build Vanilla Server
+
+```bash
+docker build --build-arg SERVER_TYPE=vanilla -t spaceengineers:latest .
+```
+
+### Build Torch Server
+
+```bash
+docker build --build-arg SERVER_TYPE=torch -t spaceengineers:torch .
+```
+
+## Using docker-compose (Local Build)
 
 Do not forget to rename `TestInstance` with your instance name!
 

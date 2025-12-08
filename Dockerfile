@@ -7,6 +7,8 @@ WORKDIR /root
 ARG DEBIAN_FRONTEND=noninteractive
 ARG WINEBRANCH=stable
 ARG WINEVERSION=9.0.0.0~bookworm-1
+ARG SERVER_TYPE=vanilla
+ARG TORCH_BUILD_URL=https://build.torchapi.com/job/Torch/job/master/lastSuccessfulBuild/artifact/bin/torch-server.zip
 
 ENV WINEARCH=win64
 ENV WINEDEBUG=-all
@@ -39,6 +41,7 @@ RUN \
   wine-${WINEBRANCH}=${WINEVERSION} \
   steamcmd \
   xvfb \
+  xmlstarlet \
   cabextract && \
   curl -L https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks > /usr/local/bin/winetricks && \
   chmod +x /usr/local/bin/winetricks 
@@ -56,8 +59,28 @@ RUN \
   apt-get -qq clean autoclean && \
   rm -rf /var/lib/{apt,dpkg,cache,log}/
 
+# Install Torch server if SERVER_TYPE=torch
+RUN if [ "$SERVER_TYPE" = "torch" ]; then \
+  mkdir -p /opt/torch && \
+  cd /opt/torch && \
+  wget -q ${TORCH_BUILD_URL} -O torch-server.zip && \
+  apt-get update -qq && \
+  apt-get install -qq -y unzip && \
+  unzip -q torch-server.zip && \
+  rm torch-server.zip && \
+  apt-get remove -qq -y unzip && \
+  apt-get autoremove -qq -y && \
+  apt-get -qq clean autoclean; \
+  fi
+
+ENV SERVER_TYPE=${SERVER_TYPE}
+
 COPY healthcheck.sh /root/
+COPY config-helper.sh /root/
 HEALTHCHECK --interval=60s --timeout=60s --start-period=600s --retries=3 CMD [ "/root/healthcheck.sh" ]
 
 COPY entrypoint.sh /root/
-ENTRYPOINT /root/entrypoint.sh
+COPY entrypoint-torch.sh /root/
+RUN chmod +x /root/entrypoint.sh /root/entrypoint-torch.sh /root/config-helper.sh
+
+ENTRYPOINT [ "/bin/bash", "-c", "if [ \"$SERVER_TYPE\" = \"torch\" ]; then /root/entrypoint-torch.sh; else /root/entrypoint.sh; fi" ]
