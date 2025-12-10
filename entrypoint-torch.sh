@@ -12,7 +12,7 @@ INSTANCE_IP=$(hostname -I | sed "s= ==g")
 source /root/config-helper.sh
 
 echo "-------------------------------INSTALL & UPDATE------------------------------"
-/usr/games/steamcmd +force_install_dir ${GAME_DIR} +login anonymous +@sSteamCmdForcePlatformType windows +app_update 298740 +quit
+/usr/games/steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir ${GAME_DIR} +login anonymous +app_update 298740 +quit
 
 echo "---------------------------------SETUP TORCH---------------------------------"
 # Copy Torch files to instance directory if not already present

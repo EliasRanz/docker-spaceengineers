@@ -68,8 +68,6 @@ RUN if [ "$SERVER_TYPE" = "torch" ]; then \
   apt-get install -qq -y unzip && \
   unzip -q torch-server.zip && \
   rm torch-server.zip && \
-  apt-get remove -qq -y unzip && \
-  apt-get autoremove -qq -y && \
   apt-get -qq clean autoclean; \
   fi
 
