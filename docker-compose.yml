@@ -1,85 +1,68 @@
 version: '3.8'
 
 services:
-  # Vanilla Space Engineers Dedicated Server
   se-server:
-    build:
-      context: .
-      args:
-        SERVER_TYPE: vanilla
-    image: spaceengineers:latest
-    container_name: se-ds-docker
+    image: ghcr.io/eliasranz/docker-spaceengineers:master-torch
+    container_name: se-server
     restart: unless-stopped
     volumes:
-      # left side: your docker-host machine
-      # right side: the paths in the image (!!do not change!!)
-      - /appdata/space-engineers/plugins:/appdata/space-engineers/plugins
-      - /appdata/space-engineers/instances:/appdata/space-engineers/instances
-      - /appdata/space-engineers/SpaceEngineersDedicated:/appdata/space-engineers/SpaceEngineersDedicated
-      - /appdata/space-engineers/steamcmd:/root/.steam
+      - /tank/docker/space-engineers/instances:/appdata/space-engineers/instances
+      - /tank/docker/space-engineers/dedicated:/appdata/space-engineers/SpaceEngineersDedicated
+      - /tank/steamcmd:/root/.steam
     ports:
-      - target: 27016
-        published: 27016
-        protocol: udp
-        mode: host
-      - target: 8080
-        published: 18080
-        protocol: tcp
-        mode: host
-    environment: 
+      - "27016:27016/udp"
+      - "18080:8080/tcp"
+    environment:
       - WINEDEBUG=-all
       - INSTANCE_NAME=SE
-      - PUBLIC_IP=127.0.0.1
-      # Auto-update config when SE updates (optional)
-      # - AUTO_UPDATE_CONFIG=true
-      # Show all available config options on startup (optional)
-      # - SHOW_CONFIG_OPTIONS=true
-      
-      # Environment variable overrides (prefix with SE_)
-      # Automatically maps to SpaceEngineers-Dedicated.cfg fields
-      # - SE_SERVER_NAME=My Awesome Server
-      # - SE_SERVER_DESCRIPTION=Welcome to my server!
-      # - SE_WORLD_NAME=MyWorld
-      # - SE_MAX_PLAYERS=16
-      # - SE_SERVER_PORT=27016
-      # - SE_GAME_MODE=Survival
-      # - SE_SCENARIO_EDIT_MODE=false
-      # - SE_ENABLE_SPECTATOR=false
-
-  # Torch Server (uncomment to use instead of vanilla)
-  # se-torch:
-  #   build:
-  #     context: .
-  #     args:
-  #       SERVER_TYPE: torch
-  #   image: spaceengineers:torch
-  #   container_name: se-torch-docker
-  #   restart: unless-stopped
-  #   volumes:
-  #     - /appdata/space-engineers/instances:/appdata/space-engineers/instances
-  #     - /appdata/space-engineers/SpaceEngineersDedicated:/appdata/space-engineers/SpaceEngineersDedicated
-  #     - /appdata/space-engineers/steamcmd:/root/.steam
-  #   ports:
-  #     - target: 27016
-  #       published: 27016
-  #       protocol: udp
-  #       mode: host
-  #     - target: 8080
-  #       published: 18080
-  #       protocol: tcp
-  #       mode: host
-  #   environment: 
-  #     - WINEDEBUG=-all
-  #     - INSTANCE_NAME=SE
-  #     - PUBLIC_IP=127.0.0.1
-  #     
-  #     # Torch Performance Plugins (installed by default for weak CPUs)
-  #     # - INSTALL_CONCEALMENT=true              # Pauses distant grids (critical for performance)
-  #     # - CONCEALMENT_DISTANCE=8000             # Distance in meters (adjust for long-range drones)
-  #     # - INSTALL_PERFORMANCE_IMPROVEMENTS=true # Viktor's optimization patches
-  #     # - INSTALL_ESSENTIALS=false              # Admin tools & cleanup (opt-in)
-  #     
-  #     # Config overrides work the same way for Torch
-  #     # - SE_SERVER_NAME=Torch Server
-  #     # - SE_MAX_PLAYERS=32
-      # public ip required for healthcheck
+      # Root-level config (MyConfigDedicated)
+      - SE_SERVER_NAME="EliasRanz Space Engineers Server"
+      - SE_WORLD_NAME="Earth Planet"
+      - SE_PAUSE_GAME_WHEN_EMPTY=true
+      - SE_GROUP_ID=45888871
+      - SE_ADMINISTRATORS=76561197996594975,76561198055930087
+      - SE_IP=se.eliasranz.com
+      - SE_SERVER_PORT=27016
+      - SE_STEAM_PORT=8766
+      - SE_PREMADE_CHECKPOINT_PATH="Content/CustomWorlds/Star System"
+      # SessionSettings (nested under MyConfigDedicated/SessionSettings)
+      - SE_SESSION_GAME_MODE=Survival
+      - SE_SESSION_ONLINE_MODE=PUBLIC
+      - SE_SESSION_MAX_PLAYERS=4
+      - SE_SESSION_MAX_FLOATING_OBJECTS=100
+      - SE_SESSION_TOTAL_PCU=200000
+      - SE_SESSION_PIRATE_PCU=50000
+      - SE_SESSION_ENVIRONMENT_HOSTILITY=NORMAL
+      - SE_SESSION_CARGO_SHIPS_ENABLED=true
+      - SE_SESSION_ENABLE_ENCOUNTERS=true
+      - SE_SESSION_ENABLE_ECONOMY=true
+      - SE_SESSION_ENABLE_WOLFS=true
+      - SE_SESSION_ENABLE_SPIDERS=true
+      - SE_SESSION_WEAPONS_ENABLED=true
+      - SE_SESSION_ENABLE_SPECTATOR=false
+      - SE_SESSION_ENABLE_INGAME_SCRIPTS=true
+      - SE_SESSION_VIEW_DISTANCE=7500
+      - SE_SESSION_SYNC_DISTANCE=3000
+      - SE_SESSION_AUTO_SAVE_IN_MINUTES=10
+      - SE_SESSION_ENABLE_RESPAWN_SHIPS=true
+      - SE_SESSION_ENABLE_DRONES=true
+      - SE_SESSION_MAX_DRONES=5
+      - SE_SESSION_SHOW_PLAYER_NAMES_ON_HUD=true
+      - SE_SESSION_TRASH_REMOVAL_ENABLED=true
+      - SE_SESSION_EXPERIMENTAL_MODE=true
+      - SE_SESSION_ENABLE_GOOD_BOT_HINTS=false
+      - SE_SESSION_ENABLE_SCRIPTER_ROLE=true
+      - SE_SESSION_ECONOMY_TICK_IN_SECONDS=1200
+      - SE_SESSION_SCRAP_ENABLED=true
+      - SE_SESSION_INVENTORY_SIZE_MULTIPLIER=3
+      - SE_SESSION_BLOCKS_INVENTORY_SIZE_MULTIPLIER=1
+      - SE_SESSION_ASSEMBLER_SPEED_MULTIPLIER=3
+      - SE_SESSION_ASSEMBLER_EFFICIENCY_MULTIPLIER=3
+      - SE_SESSION_REFINERY_SPEED_MULTIPLIER=3
+      - SE_SESSION_WELDER_SPEED_MULTIPLIER=2
+      - SE_SESSION_GRINDER_SPEED_MULTIPLIER=2
+      # Torch Performance Plugins
+      - INSTALL_CONCEALMENT=true
+      - CONCEALMENT_DISTANCE=10000
+      - INSTALL_PERFORMANCE_IMPROVEMENTS=true
+      - INSTALL_ESSENTIALS=false

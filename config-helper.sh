@@ -2,27 +2,38 @@
 # Space Engineers Configuration Helper
 # Auto-discovers config schema and applies environment variable overrides
 
-# Convert environment variable name to XML element name
-# Example: SERVER_NAME -> ServerName, MAX_PLAYERS -> MaxPlayers
+# Convert environment variable name to XML element name and path
+# Example: SERVER_NAME -> ServerName (root level)
+#          SESSION_MAX_PLAYERS -> MaxPlayers (SessionSettings level)
 env_to_xml_element() {
     local env_var="$1"
     
     # Remove SE_ prefix if present
     env_var="${env_var#SE_}"
     
+    # Check if this is a SessionSettings variable
+    local xml_path="/MyConfigDedicated"
+    if [[ "$env_var" =~ ^SESSION_ ]]; then
+        xml_path="/MyConfigDedicated/SessionSettings"
+        # Remove SESSION_ prefix for element name
+        env_var="${env_var#SESSION_}"
+    fi
+    
     # Convert SCREAMING_SNAKE_CASE to PascalCase
     # SERVER_NAME -> ServerName
     # MAX_PLAYERS -> MaxPlayers
-    echo "$env_var" | awk -F_ '{
+    local xml_element=$(echo "$env_var" | awk -F_ '{
         result = ""
         for(i=1; i<=NF; i++) {
             result = result toupper(substr($i,1,1)) tolower(substr($i,2))
         }
         print result
-    }'
+    }')
+    
+    echo "${xml_path}/${xml_element}"
 }
 
-# Get all valid XML elements from SE config
+# Get all valid XML elements from SE config (both root and SessionSettings)
 get_valid_elements() {
     local config_file="$1"
     
@@ -31,30 +42,33 @@ get_valid_elements() {
         return 1
     fi
     
-    xmlstarlet sel -t -m "/MyConfigDedicated/*" -v "name()" -n "$config_file" 2>/dev/null | tr '\n' ' '
+    # Get root-level elements
+    xmlstarlet sel -t -m "/MyConfigDedicated/*[not(self::SessionSettings)]" -v "name()" -n "$config_file" 2>/dev/null | tr '\n' ' '
+    # Get SessionSettings elements with SESSION_ prefix
+    xmlstarlet sel -t -m "/MyConfigDedicated/SessionSettings/*" -v "concat('SESSION_', name())" -n "$config_file" 2>/dev/null | tr '\n' ' '
 }
 
 # Update a single config value with validation
 update_config_value() {
     local config_file="$1"
-    local xml_element="$2"
+    local xml_path="$2"
     local new_value="$3"
     local env_var_name="$4"
     
     # Check if element exists in config
-    if xmlstarlet sel -t -v "/MyConfigDedicated/${xml_element}" "$config_file" &>/dev/null; then
+    if xmlstarlet sel -t -v "$xml_path" "$config_file" &>/dev/null; then
         # Element exists, update it
-        xmlstarlet ed -L -u "/MyConfigDedicated/${xml_element}" -v "$new_value" "$config_file" 2>/dev/null
+        xmlstarlet ed -L -u "$xml_path" -v "$new_value" "$config_file" 2>/dev/null
         
         if [ $? -eq 0 ]; then
-            echo "  ✓ ${env_var_name} → ${xml_element} = ${new_value}"
+            echo "  ✓ ${env_var_name} → ${xml_path} = ${new_value}"
             return 0
         else
-            echo "  ✗ ${env_var_name}: Failed to update ${xml_element}"
+            echo "  ✗ ${env_var_name}: Failed to update ${xml_path}"
             return 1
         fi
     else
-        echo "  ⚠ ${env_var_name}: Element '${xml_element}' not found in config (may have been removed/renamed)"
+        echo "  ⚠ ${env_var_name}: Element '${xml_path}' not found in config"
         return 1
     fi
 }
@@ -102,16 +116,17 @@ apply_environment_overrides() {
             continue
         fi
         
-        # Convert env var to XML element name
-        local xml_element=$(env_to_xml_element "$env_var")
+        # Convert env var to XML path
+        local xml_path=$(env_to_xml_element "$env_var")
         
         # Check if element exists and update
-        if update_config_value "$config_file" "$xml_element" "$env_value" "$env_var"; then
+        if update_config_value "$config_file" "$xml_path" "$env_value" "$env_var"; then
             ((applied_count++))
         else
             ((skipped_count++))
             
             # Suggest similar elements
+            local xml_element=$(basename "$xml_path")
             local similar=$(find_similar_elements "$xml_element" "$valid_elements")
             if [ -n "$similar" ]; then
                 echo "    Suggestion: Did you mean one of these? $similar"
@@ -192,12 +207,23 @@ show_available_config() {
     echo "Available Configuration Options"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
-    xmlstarlet sel -t -m "/MyConfigDedicated/*" \
+    echo "Root-level settings:"
+    xmlstarlet sel -t -m "/MyConfigDedicated/*[not(self::SessionSettings)]" \
         -v "name()" -o " = " -v "." -n "$config_file" 2>/dev/null | \
         while IFS='=' read -r element value; do
             # Convert to env var style
             local env_var=$(echo "$element" | sed 's/\([A-Z]\)/_\1/g' | tr '[:lower:]' '[:upper:]' | sed 's/^_//')
-            printf "  SE_%-30s (current: %s)\n" "$env_var" "$(echo $value | xargs)"
+            printf "  SE_%-40s (current: %s)\n" "$env_var" "$(echo $value | xargs)"
+        done
+    
+    echo ""
+    echo "SessionSettings:"
+    xmlstarlet sel -t -m "/MyConfigDedicated/SessionSettings/*" \
+        -v "name()" -o " = " -v "." -n "$config_file" 2>/dev/null | \
+        while IFS='=' read -r element value; do
+            # Convert to env var style with SESSION_ prefix
+            local env_var=$(echo "$element" | sed 's/\([A-Z]\)/_\1/g' | tr '[:lower:]' '[:upper:]' | sed 's/^_//')
+            printf "  SE_SESSION_%-40s (current: %s)\n" "$env_var" "$(echo $value | xargs)"
         done
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

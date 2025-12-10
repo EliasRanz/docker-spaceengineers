@@ -86,10 +86,11 @@ services:
       - WINEDEBUG=-all
       - INSTANCE_NAME=SE
       - PUBLIC_IP=127.0.0.1
-      # Config overrides - prefix with SE_
+      # Root-level config overrides
       - SE_SERVER_NAME=My Awesome Server
-      - SE_MAX_PLAYERS=16
-      - SE_GAME_MODE=Survival
+      # Session settings (use SE_SESSION_ prefix)
+      - SE_SESSION_MAX_PLAYERS=16
+      - SE_SESSION_GAME_MODE=Survival
       # Performance plugins (see below)
       - INSTALL_CONCEALMENT=true
       - CONCEALMENT_DISTANCE=8000
@@ -181,31 +182,26 @@ Override any config setting using `SE_` prefixed environment variables:
 
 ```yaml
 environment:
-  # Common settings
+  # Root-level settings (SE_*)
   - SE_SERVER_NAME=My Server
   - SE_SERVER_DESCRIPTION=Welcome to my server!
   - SE_WORLD_NAME=MyWorld
-  - SE_MAX_PLAYERS=16
   - SE_SERVER_PORT=27016
-  - SE_GAME_MODE=Survival
-  
-  # Access control
-  - SE_SCENARIO_EDIT_MODE=false
+  - SE_PAUSE_GAME_WHEN_EMPTY=false
   - SE_IGNORE_LAST_SESSION=true
   
-  # Performance
-  - SE_VIEW_DISTANCE=15000
-  - SE_PAUSE_GAME_WHEN_EMPTY=false
-  
-  # Features
-  - SE_ENABLE_SPECTATOR=false
-  - SE_ENABLE_INGAME_SCRIPTS=true
-  - SE_SHOW_PLAYER_NAMES_ON_HUD=true
+  # Session settings (SE_SESSION_*)
+  - SE_SESSION_GAME_MODE=Survival
+  - SE_SESSION_MAX_PLAYERS=16
+  - SE_SESSION_VIEW_DISTANCE=15000
+  - SE_SESSION_ENABLE_SPECTATOR=false
+  - SE_SESSION_ENABLE_INGAME_SCRIPTS=true
+  - SE_SESSION_SHOW_PLAYER_NAMES_ON_HUD=true
 ```
 
 **Naming Convention:**
-- Environment var: `SE_MAX_PLAYERS` → Config XML: `<MaxPlayers>`
-- Environment var: `SE_SERVER_NAME` → Config XML: `<ServerName>`
+- Root-level: `SE_SERVER_NAME` → `<ServerName>` in `/MyConfigDedicated/`
+- Session settings: `SE_SESSION_MAX_PLAYERS` → `<MaxPlayers>` in `/MyConfigDedicated/SessionSettings/`
 
 ### See All Available Options
 
