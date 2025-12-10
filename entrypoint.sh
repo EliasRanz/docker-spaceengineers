@@ -14,6 +14,14 @@ echo "-------------------------------INSTALL & UPDATE---------------------------
 /usr/games/steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir ${GAME_DIR} +login anonymous +app_update 298740 +quit
 
 echo "---------------------------------INITIALIZE CONFIG---------------------------"
+# Use embedded default config as fallback if SE installation doesn't have one
+DEFAULT_TEMPLATE="/root/SpaceEngineers-Dedicated.default.cfg"
+
+if [ ! -f "$DEFAULT_CONFIG" ]; then
+  echo "Default config not found in SE installation, using embedded template"
+  DEFAULT_CONFIG="$DEFAULT_TEMPLATE"
+fi
+
 # Initialize config from SE default if needed
 initialize_config "$DEFAULT_CONFIG" "$CONFIG_PATH" "$AUTO_UPDATE_CONFIG"
 

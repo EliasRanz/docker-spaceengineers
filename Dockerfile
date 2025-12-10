@@ -75,6 +75,7 @@ ENV SERVER_TYPE=${SERVER_TYPE}
 
 COPY healthcheck.sh /root/
 COPY config-helper.sh /root/
+COPY SpaceEngineers-Dedicated.default.cfg /root/
 HEALTHCHECK --interval=60s --timeout=60s --start-period=600s --retries=3 CMD [ "/root/healthcheck.sh" ]
 
 COPY entrypoint.sh /root/

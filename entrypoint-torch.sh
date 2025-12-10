@@ -107,11 +107,12 @@ fi
 # Create default Torch config if it doesn't exist
 if [ ! -f "${CONFIG_PATH}" ]; then
   echo "Creating default Torch configuration..."
-  cat > ${CONFIG_PATH} << 'EOF'
+  cat > ${CONFIG_PATH} << EOF
 <?xml version="1.0"?>
 <TorchConfig xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <InstancePath>Saves</InstancePath>
   <InstanceName>Instance</InstanceName>
+  <InstallPath>${GAME_DIR}</InstallPath>
   <AutodetectPlugins>true</AutodetectPlugins>
   <Plugins />
   <EnableAsserts>false</EnableAsserts>
@@ -133,11 +134,21 @@ fi
 echo "---------------------------------INITIALIZE SE CONFIG------------------------"
 # Torch uses Instance/SpaceEngineers-Dedicated.cfg for SE settings
 mkdir -p "${INSTANCES_DIR}/${INSTANCE_NAME}/Instance"
+
+# Use embedded default config as fallback if SE installation doesn't have one
+DEFAULT_TEMPLATE="/root/SpaceEngineers-Dedicated.default.cfg"
+
+if [ ! -f "$DEFAULT_CONFIG" ]; then
+  echo "Default config not found in SE installation, using embedded template"
+  DEFAULT_CONFIG="$DEFAULT_TEMPLATE"
+fi
+
+# Initialize config - copy default if user doesn't have one
 initialize_config "$DEFAULT_CONFIG" "$SE_CONFIG_PATH" "$AUTO_UPDATE_CONFIG"
 
 # Show available options if requested
 if [ "$SHOW_CONFIG_OPTIONS" = "true" ]; then
-    show_available_config "$DEFAULT_CONFIG"
+    show_available_config "$SE_CONFIG_PATH"
 fi
 
 echo "--------------------------APPLY ENVIRONMENT OVERRIDES------------------------"
