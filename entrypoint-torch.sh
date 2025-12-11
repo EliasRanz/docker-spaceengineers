@@ -260,16 +260,48 @@ else
 fi
 
 echo "--------------------------------START TORCH SERVER---------------------------"
-cd ${INSTANCES_DIR}/${INSTANCE_NAME}
+cd ${INSTANCES_DIR}/${INSTANCE_NAME} || exit 1
+
+# List files in current directory for debugging
+echo "Current directory: $(pwd)"
+echo "Files present:"
+ls -lh *.exe 2>/dev/null | head -5 || echo "No .exe files found"
 
 # Run Torch with proper flags for headless operation
 # -noupdate: Skip Torch updates
 # -autostart: Start server automatically
 # -nogui: Disable GUI (critical for Docker)
 # -console: Force console mode
+echo "Starting Wine with Torch.Server.exe..."
+
+# Set Wine environment to match build configuration
+export WINEARCH=win64
+export WINEPREFIX=/root/server
 export WINEDLLOVERRIDES="mscoree,mshtml="
-wine Torch.Server.exe -noupdate -autostart -nogui -console
+export WINEDEBUG=-all
+
+# Check if Torch.Server.exe is executable
+if [ ! -x "Torch.Server.exe" ]; then
+    echo "Making Torch.Server.exe executable..."
+    chmod +x Torch.Server.exe
+fi
+
+# Verify Wine prefix exists
+if [ ! -d "$WINEPREFIX" ]; then
+    echo "ERROR: Wine prefix not found at $WINEPREFIX"
+    echo "This shouldn't happen - wine was not properly initialized during build"
+    exit 1
+fi
+
+echo "Wine configuration:"
+echo "  WINEPREFIX: $WINEPREFIX"
+echo "  WINEARCH: $WINEARCH"
+
+# Run with explicit error capture
+wine Torch.Server.exe -noupdate -autostart -nogui -console 2>&1
+WINE_EXIT_CODE=$?
 
 echo "-----------------------------------END GAME----------------------------------"
+echo "Wine exit code: $WINE_EXIT_CODE"
 sleep 1
 echo "-----------------------------------BYE !!!!----------------------------------"
