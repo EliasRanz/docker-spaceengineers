@@ -24,7 +24,7 @@ services:
       - SE_IP=se.eliasranz.com
       - SE_SERVER_PORT=27016
       - SE_STEAM_PORT=8766
-      - SE_PREMADE_CHECKPOINT_PATH="Content/CustomWorlds/Star System"
+      - SE_PREMADE_CHECKPOINT_PATH="/appdata/space-engineers/SpaceEngineersDedicated/Content/CustomWorlds/Star System/Sandbox.sbc"
       # SessionSettings (nested under MyConfigDedicated/SessionSettings)
       - SE_SESSION_GAME_MODE=Survival
       - SE_SESSION_ONLINE_MODE=PUBLIC

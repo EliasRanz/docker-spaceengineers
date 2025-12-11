@@ -336,9 +336,9 @@ else
     echo "  This indicates winetricks installation failed during build"
 fi
 
-# Enable Wine debugging temporarily to see what's failing
-echo "Running Torch with detailed Wine debugging..."
-export WINEDEBUG=warn+all
+# Suppress Wine warnings - only show errors
+echo "Starting Torch Server..."
+export WINEDEBUG=-all,err+all
 
 # Run with explicit error capture
 wine Torch.Server.exe -noupdate -autostart -nogui -console 2>&1

@@ -117,10 +117,44 @@ apply_environment_overrides() {
     local applied_count=0
     local skipped_count=0
     
+    # Special handling for SE_MODS (comma-separated workshop IDs)
+    if [ -n "$SE_MODS" ]; then
+        echo "  Configuring workshop mods..."
+        
+        # Clear existing Mods section
+        xmlstarlet ed -L -d "/MyConfigDedicated/Mods/ModItem" "$config_file" 2>/dev/null
+        
+        # Add each mod as a ModItem
+        IFS=',' read -ra MOD_IDS <<< "$SE_MODS"
+        for mod_id in "${MOD_IDS[@]}"; do
+            mod_id=$(echo "$mod_id" | xargs) # trim whitespace
+            
+            # Add ModItem with Name element containing PublishedFileId
+            xmlstarlet ed -L \
+                -s "/MyConfigDedicated/Mods" -t elem -n "ModItem" \
+                -s "/MyConfigDedicated/Mods/ModItem[last()]" -t elem -n "Name" -v "$mod_id.sbm" \
+                -s "/MyConfigDedicated/Mods/ModItem[last()]" -t elem -n "PublishedFileId" -v "$mod_id" \
+                "$config_file" 2>/dev/null
+            
+            if [ $? -eq 0 ]; then
+                echo "  ✓ SE_MODS → Added workshop mod: $mod_id"
+                ((applied_count++))
+            else
+                echo "  ✗ SE_MODS → Failed to add mod: $mod_id"
+                ((skipped_count++))
+            fi
+        done
+    fi
+    
     # Process SE_ prefixed environment variables
     while IFS='=' read -r env_var env_value; do
         # Skip if empty or not SE_ prefixed
         if [[ ! "$env_var" =~ ^SE_ ]]; then
+            continue
+        fi
+        
+        # Skip SE_MODS as it's already handled above
+        if [[ "$env_var" == "SE_MODS" ]]; then
             continue
         fi
         
