@@ -11,7 +11,13 @@ INSTANCE_IP=$(hostname -I | sed "s= ==g")
 source /root/config-helper.sh
 
 echo "-------------------------------INSTALL & UPDATE------------------------------"
-/usr/games/steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir ${GAME_DIR} +login anonymous +app_update 298740 +quit
+# Set platform before anything else, then login, then install
+/usr/games/steamcmd \
+  +@sSteamCmdForcePlatformType windows \
+  +force_install_dir ${GAME_DIR} \
+  +login anonymous \
+  +app_update 298740 validate \
+  +quit
 
 echo "---------------------------------INITIALIZE CONFIG---------------------------"
 # Use embedded default config as fallback if SE installation doesn't have one

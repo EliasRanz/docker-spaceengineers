@@ -12,7 +12,13 @@ INSTANCE_IP=$(hostname -I | sed "s= ==g")
 source /root/config-helper.sh
 
 echo "-------------------------------INSTALL & UPDATE------------------------------"
-/usr/games/steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir ${GAME_DIR} +login anonymous +app_update 298740 +quit
+# Set platform before anything else, then login, then install
+/usr/games/steamcmd \
+  +@sSteamCmdForcePlatformType windows \
+  +force_install_dir ${GAME_DIR} \
+  +login anonymous \
+  +app_update 298740 validate \
+  +quit
 
 echo "-------------------------------VERIFY SE INSTALLATION------------------------"
 echo "Checking Space Engineers installation at: ${GAME_DIR}"
@@ -84,12 +90,13 @@ if [ "$INSTALL_CONCEALMENT" = "true" ]; then
   CONCEALMENT_FILE="${PLUGINS_DIR}/Concealment.zip"
   if [ ! -f "$CONCEALMENT_FILE" ]; then
     echo "Installing Concealment plugin (performance-critical)..."
-    wget -q -O "$CONCEALMENT_FILE" "https://torchapi.com/plugins/download/17f44521-b77a-4e85-810f-ee73311cf75d" || {
-      echo "Warning: Failed to download Concealment plugin"
-    }
-    if [ -f "$CONCEALMENT_FILE" ]; then
+    wget --timeout=30 --tries=3 -O "$CONCEALMENT_FILE" "https://torchapi.com/plugins/download/17f44521-b77a-4e85-810f-ee73311cf75d" 2>&1
+    if [ $? -eq 0 ] && [ -f "$CONCEALMENT_FILE" ] && [ -s "$CONCEALMENT_FILE" ]; then
       unzip -q -o "$CONCEALMENT_FILE" -d "${PLUGINS_DIR}/" && rm "$CONCEALMENT_FILE"
       echo "✓ Concealment plugin installed"
+    else
+      echo "✗ Failed to download Concealment plugin (will retry next start)"
+      rm -f "$CONCEALMENT_FILE"
     fi
   else
     echo "✓ Concealment plugin already installed"
@@ -97,21 +104,22 @@ if [ "$INSTALL_CONCEALMENT" = "true" ]; then
 fi
 
 # Performance Improvements Plugin - Viktor's optimization patches
-# Fixes various game inefficiencies, reduces GC pressure, improves sim speed
 if [ "$INSTALL_PERFORMANCE_IMPROVEMENTS" = "true" ]; then
   PERF_FILE="${PLUGINS_DIR}/PerformanceImprovements.zip"
   if [ ! -f "$PERF_FILE" ]; then
     echo "Installing Performance Improvements plugin..."
-    wget -q -O "$PERF_FILE" "https://torchapi.com/plugins/download/c2cf3ed2-c6ac-4dbd-ab9a-613a1ef67784" || {
-      echo "Warning: Failed to download Performance Improvements plugin"
-    }
-    if [ -f "$PERF_FILE" ]; then
+    wget --timeout=30 --tries=3 -O "$PERF_FILE" "https://torchapi.com/plugins/download/c2cf3ed2-c6ac-4dbd-ab9a-613a1ef67784" 2>&1
+    if [ $? -eq 0 ] && [ -f "$PERF_FILE" ] && [ -s "$PERF_FILE" ]; then
       unzip -q -o "$PERF_FILE" -d "${PLUGINS_DIR}/" && rm "$PERF_FILE"
       echo "✓ Performance Improvements plugin installed"
+    else
+      echo "✗ Failed to download Performance Improvements plugin (will retry next start)"
+      rm -f "$PERF_FILE"
     fi
   else
     echo "✓ Performance Improvements plugin already installed"
   fi
+fifi
 fi
 
 # Essentials Plugin - Cleanup automation and admin tools
