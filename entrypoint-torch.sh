@@ -231,9 +231,45 @@ echo "INSTANCES_DIR=$INSTANCES_DIR"
 echo "CONFIG_PATH=$CONFIG_PATH"
 echo "INSTANCE_IP=$INSTANCE_IP"
 wine --version
+
+# Verify critical files exist
+echo "--------------------------------PRE-FLIGHT CHECKS----------------------------"
+echo "Checking Torch.Server.exe..."
+if [ -f "${INSTANCES_DIR}/${INSTANCE_NAME}/Torch.Server.exe" ]; then
+    echo "✓ Torch.Server.exe found"
+else
+    echo "✗ ERROR: Torch.Server.exe not found!"
+    exit 1
+fi
+
+echo "Checking SE game files via symlink..."
+if [ -f "${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64/SpaceEngineersDedicated.exe" ]; then
+    echo "✓ SpaceEngineersDedicated.exe accessible"
+else
+    echo "✗ ERROR: SpaceEngineersDedicated.exe not found!"
+    exit 1
+fi
+
+echo "Checking Torch.cfg..."
+if [ -f "${INSTANCES_DIR}/${INSTANCE_NAME}/Torch.cfg" ]; then
+    echo "✓ Torch.cfg found"
+    echo "Instance Path in Torch.cfg:"
+    grep -A 1 "<InstancePath>" "${INSTANCES_DIR}/${INSTANCE_NAME}/Torch.cfg" || echo "  (not set)"
+else
+    echo "✗ WARNING: Torch.cfg not found"
+fi
+
 echo "--------------------------------START TORCH SERVER---------------------------"
 cd ${INSTANCES_DIR}/${INSTANCE_NAME}
-wine Torch.Server.exe -noupdate -autostart
+
+# Run Torch with proper flags for headless operation
+# -noupdate: Skip Torch updates
+# -autostart: Start server automatically
+# -nogui: Disable GUI (critical for Docker)
+# -console: Force console mode
+export WINEDLLOVERRIDES="mscoree,mshtml="
+wine Torch.Server.exe -noupdate -autostart -nogui -console
+
 echo "-----------------------------------END GAME----------------------------------"
 sleep 1
 echo "-----------------------------------BYE !!!!----------------------------------"
