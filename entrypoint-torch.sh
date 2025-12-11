@@ -277,8 +277,8 @@ echo "Starting Wine with Torch.Server.exe..."
 # Set Wine environment to match build configuration
 export WINEARCH=win64
 export WINEPREFIX=/root/server
-export WINEDLLOVERRIDES="mscoree,mshtml="
-export WINEDEBUG=-all
+# Allow .NET runtime to load (Torch requires it), but disable IE components
+export WINEDLLOVERRIDES="mshtml=d"
 
 # Check if Torch.Server.exe is executable
 if [ ! -x "Torch.Server.exe" ]; then
@@ -296,6 +296,20 @@ fi
 echo "Wine configuration:"
 echo "  WINEPREFIX: $WINEPREFIX"
 echo "  WINEARCH: $WINEARCH"
+
+# Check for .NET installation in Wine prefix
+echo "Checking .NET Framework installation..."
+if [ -d "$WINEPREFIX/drive_c/windows/Microsoft.NET" ]; then
+    echo "✓ .NET Framework directory found"
+    ls -la "$WINEPREFIX/drive_c/windows/Microsoft.NET/Framework64/" 2>/dev/null | grep "v4" || echo "  WARNING: .NET 4.x not found"
+else
+    echo "✗ .NET Framework NOT FOUND - Torch requires .NET 4.8"
+    echo "  This indicates winetricks installation failed during build"
+fi
+
+# Enable Wine debugging temporarily to see what's failing
+echo "Running Torch with detailed Wine debugging..."
+export WINEDEBUG=warn+all
 
 # Run with explicit error capture
 wine Torch.Server.exe -noupdate -autostart -nogui -console 2>&1
