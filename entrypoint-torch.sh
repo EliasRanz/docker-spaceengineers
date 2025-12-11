@@ -37,7 +37,36 @@ echo "---------------------------------SETUP TORCH------------------------------
 if [ ! -f "${INSTANCES_DIR}/${INSTANCE_NAME}/Torch.Server.exe" ]; then
   echo "Initializing Torch server in instance directory..."
   mkdir -p ${INSTANCES_DIR}/${INSTANCE_NAME}
-  cp -r ${TORCH_DIR}/* ${INSTANCES_DIR}/${INSTANCE_NAME}/
+  
+  # Verify Torch source directory exists and has files
+  if [ ! -d "${TORCH_DIR}" ] || [ -z "$(ls -A ${TORCH_DIR})" ]; then
+    echo "ERROR: Torch directory is missing or empty at ${TORCH_DIR}"
+    echo "The Docker image may not have been built correctly with SERVER_TYPE=torch"
+    exit 1
+  fi
+  
+  echo "Copying Torch files from ${TORCH_DIR}..."
+  cp -rv ${TORCH_DIR}/* ${INSTANCES_DIR}/${INSTANCE_NAME}/ 2>&1 | head -20
+  echo "Torch files copied"
+fi
+
+# Verify critical Torch files exist
+echo "Verifying Torch installation..."
+MISSING_FILES=0
+for file in "Torch.Server.exe" "Torch.Server.exe.config" "NLog.dll" "Torch.dll" "Torch.API.dll"; do
+  if [ ! -f "${INSTANCES_DIR}/${INSTANCE_NAME}/${file}" ]; then
+    echo "  ✗ Missing: ${file}"
+    ((MISSING_FILES++))
+  else
+    echo "  ✓ Found: ${file}"
+  fi
+done
+
+if [ $MISSING_FILES -gt 0 ]; then
+  echo "ERROR: ${MISSING_FILES} critical Torch files are missing"
+  echo "Listing instance directory contents:"
+  ls -la "${INSTANCES_DIR}/${INSTANCE_NAME}/" | head -30
+  exit 1
 fi
 
 # Create symlink to SE game files so Torch can find them
