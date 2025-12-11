@@ -14,12 +14,58 @@ source /root/config-helper.sh
 echo "-------------------------------INSTALL & UPDATE------------------------------"
 /usr/games/steamcmd +@sSteamCmdForcePlatformType windows +force_install_dir ${GAME_DIR} +login anonymous +app_update 298740 +quit
 
+echo "-------------------------------VERIFY SE INSTALLATION------------------------"
+echo "Checking Space Engineers installation at: ${GAME_DIR}"
+if [ -d "${GAME_DIR}/DedicatedServer64" ]; then
+  echo "✓ DedicatedServer64 directory exists"
+  echo "  Files in DedicatedServer64:"
+  ls -lh "${GAME_DIR}/DedicatedServer64/" | grep -E "(steam_api64|SpaceEngineers)" | head -10
+else
+  echo "✗ DedicatedServer64 directory NOT FOUND at: ${GAME_DIR}/DedicatedServer64"
+  echo "  Contents of GAME_DIR:"
+  ls -la "${GAME_DIR}/" || echo "  GAME_DIR does not exist!"
+fi
+
 echo "---------------------------------SETUP TORCH---------------------------------"
 # Copy Torch files to instance directory if not already present
 if [ ! -f "${INSTANCES_DIR}/${INSTANCE_NAME}/Torch.Server.exe" ]; then
   echo "Initializing Torch server in instance directory..."
   mkdir -p ${INSTANCES_DIR}/${INSTANCE_NAME}
   cp -r ${TORCH_DIR}/* ${INSTANCES_DIR}/${INSTANCE_NAME}/
+fi
+
+# Create symlink to SE game files so Torch can find them
+echo "Checking DedicatedServer64 symlink..."
+if [ -L "${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64" ]; then
+  echo "  Symlink exists, removing to recreate..."
+  rm "${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64"
+fi
+
+echo "Creating symlink: ${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64 → ${GAME_DIR}/DedicatedServer64"
+ln -s "${GAME_DIR}/DedicatedServer64" "${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64"
+
+# Verify symlink creation
+if [ -L "${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64" ]; then
+  echo "✓ Symlink created successfully"
+  echo "  Link target: $(readlink ${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64)"
+else
+  echo "✗ Failed to create symlink!"
+fi
+
+# Verify steam_api64.dll is accessible through both paths
+echo "Verifying steam_api64.dll accessibility:"
+if [ -f "${GAME_DIR}/DedicatedServer64/steam_api64.dll" ]; then
+  echo "  ✓ Via GAME_DIR: ${GAME_DIR}/DedicatedServer64/steam_api64.dll"
+else
+  echo "  ✗ NOT FOUND via GAME_DIR: ${GAME_DIR}/DedicatedServer64/steam_api64.dll"
+fi
+
+if [ -f "${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64/steam_api64.dll" ]; then
+  echo "  ✓ Via symlink: ${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64/steam_api64.dll"
+else
+  echo "  ✗ NOT FOUND via symlink: ${INSTANCES_DIR}/${INSTANCE_NAME}/DedicatedServer64/steam_api64.dll"
+  echo "  Directory contents:"
+  ls -la "${INSTANCES_DIR}/${INSTANCE_NAME}/" 2>/dev/null || echo "  Instance directory doesn't exist"
 fi
 
 echo "-----------------------------INSTALL PERFORMANCE PLUGINS---------------------"
