@@ -316,12 +316,12 @@ Sure, feel free to submit merge requests or issues if you have anything to impro
 ## Known issues
 
 - **Torch Plugin Downloads**
-  - TorchAPI.com plugin download URLs are currently returning 404 errors (as of December 2024)
-  - **Performance Improvements plugin**: ✅ **Automatically downloaded** from GitHub releases
-  - **Concealment plugin**: ⚠️ Manual installation required (not available on GitHub)
-    - Check [TorchAPI page](https://torchapi.com/plugins/view/17f44521-b77a-4e85-810f-ee73311cf75d) or SE Mods Discord
-  - Other plugins: Check [TorchAPI.com/plugins](https://torchapi.com/plugins) for GitHub links
-  - The server will start successfully without plugins (they're optional optimizations)
+  - ✅ **All plugins now auto-download successfully!**
+  - The correct TorchAPI endpoint is `/plugin/download/` (not `/plugins/download/`)
+  - **Concealment**: Automatically downloaded from TorchAPI
+  - **Performance Improvements**: Automatically downloaded from TorchAPI (GitHub fallback available)
+  - **Essentials**: Automatically downloaded from TorchAPI when enabled
+  - The server will start successfully with all enabled plugins installed
   
 - **VRage Remote Client**
   - Connection issues reported - if you get it working, please share! [See issue](https://github.com/Devidian/docker-spaceengineers/issues/36)

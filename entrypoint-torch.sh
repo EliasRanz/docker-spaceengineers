@@ -86,22 +86,25 @@ INSTALL_ESSENTIALS="${INSTALL_ESSENTIALS:-false}"
 
 # Concealment Plugin - Critical for performance on weak CPUs
 # Pauses grids when no players are nearby, reduces sim speed load by 50-90%
-# NOTE: Concealment is not available on GitHub, only via TorchAPI (currently broken)
 if [ "$INSTALL_CONCEALMENT" = "true" ]; then
   # Check if plugin DLL exists (installed manually or from previous working download)
   if [ -f "${PLUGINS_DIR}/Concealment.dll" ] || [ -f "${PLUGINS_DIR}/Concealment/Concealment.dll" ]; then
     echo "✓ Concealment plugin already installed"
   else
-    echo "⚠ Concealment plugin not found"
-    echo "  TorchAPI download URLs are currently broken (404 errors)"
-    echo "  This plugin must be manually installed from TorchAPI when available"
-    echo "  Plugin page: https://torchapi.com/plugins/view/17f44521-b77a-4e85-810f-ee73311cf75d"
-    echo "  Extract ZIP contents to: ${PLUGINS_DIR}/"
+    echo "Installing Concealment plugin from TorchAPI..."
+    CONCEALMENT_FILE="${PLUGINS_DIR}/Concealment.zip"
+    wget --timeout=30 --tries=3 -O "$CONCEALMENT_FILE" "https://torchapi.com/plugin/download/17f44521-b77a-4e85-810f-ee73311cf75d" 2>&1
+    if [ $? -eq 0 ] && [ -f "$CONCEALMENT_FILE" ] && [ -s "$CONCEALMENT_FILE" ]; then
+      unzip -q -o "$CONCEALMENT_FILE" -d "${PLUGINS_DIR}/" && rm "$CONCEALMENT_FILE"
+      echo "✓ Concealment plugin installed"
+    else
+      echo "✗ Failed to download Concealment plugin (will retry next start)"
+      rm -f "$CONCEALMENT_FILE"
+    fi
   fi
 fi
 
 # Performance Improvements Plugin - Viktor's optimization patches
-# Available at: https://github.com/viktor-ferenczi/se-performance-improvements/releases
 if [ "$INSTALL_PERFORMANCE_IMPROVEMENTS" = "true" ]; then
   # Check if plugin DLL exists (any of the possible locations)
   if [ -f "${PLUGINS_DIR}/PerformanceImprovements.dll" ] || \
@@ -109,18 +112,25 @@ if [ "$INSTALL_PERFORMANCE_IMPROVEMENTS" = "true" ]; then
      [ -f "${PLUGINS_DIR}/PerformanceImprovements/PerformanceImprovements.dll" ]; then
     echo "✓ Performance Improvements plugin already installed"
   else
-    echo "Installing Performance Improvements plugin from GitHub..."
-    PERF_URL="https://github.com/viktor-ferenczi/se-performance-improvements/releases/latest/download/TorchPlugin.zip"
-    PERF_FILE="${PLUGINS_DIR}/TorchPlugin.zip"
+    echo "Installing Performance Improvements plugin from TorchAPI..."
+    PERF_FILE="${PLUGINS_DIR}/PerformanceImprovements.zip"
     
-    wget --timeout=30 --tries=3 -O "$PERF_FILE" "$PERF_URL" 2>&1
+    wget --timeout=30 --tries=3 -O "$PERF_FILE" "https://torchapi.com/plugin/download/c2cf3ed2-c6ac-4dbd-ab9a-613a1ef67784" 2>&1
     if [ $? -eq 0 ] && [ -f "$PERF_FILE" ] && [ -s "$PERF_FILE" ]; then
       unzip -q -o "$PERF_FILE" -d "${PLUGINS_DIR}/" && rm "$PERF_FILE"
-      echo "✓ Performance Improvements plugin installed from GitHub"
+      echo "✓ Performance Improvements plugin installed"
     else
-      echo "✗ Failed to download Performance Improvements plugin"
-      echo "  Download manually from: https://github.com/viktor-ferenczi/se-performance-improvements/releases"
+      echo "✗ Failed to download from TorchAPI, trying GitHub..."
       rm -f "$PERF_FILE"
+      PERF_FILE="${PLUGINS_DIR}/TorchPlugin.zip"
+      wget --timeout=30 --tries=3 -O "$PERF_FILE" "https://github.com/viktor-ferenczi/se-performance-improvements/releases/latest/download/TorchPlugin.zip" 2>&1
+      if [ $? -eq 0 ] && [ -f "$PERF_FILE" ] && [ -s "$PERF_FILE" ]; then
+        unzip -q -o "$PERF_FILE" -d "${PLUGINS_DIR}/" && rm "$PERF_FILE"
+        echo "✓ Performance Improvements plugin installed from GitHub"
+      else
+        echo "✗ Failed to download Performance Improvements plugin"
+        rm -f "$PERF_FILE"
+      fi
     fi
   fi
 fi
@@ -128,18 +138,20 @@ fi
 # Essentials Plugin - Cleanup automation and admin tools
 # Provides grid limits, automated cleanup, trash removal
 if [ "$INSTALL_ESSENTIALS" = "true" ]; then
-  ESSENTIALS_FILE="${PLUGINS_DIR}/Essentials.zip"
-  if [ ! -f "$ESSENTIALS_FILE" ]; then
-    echo "Installing Essentials plugin..."
-    wget -q -O "$ESSENTIALS_FILE" "https://torchapi.com/plugins/download/cbfdd6ab-4cda-4544-a201-f73efa3d46c0" || {
-      echo "Warning: Failed to download Essentials plugin"
-    }
-    if [ -f "$ESSENTIALS_FILE" ]; then
+  # Check if plugin DLL exists
+  if [ -f "${PLUGINS_DIR}/Essentials.dll" ] || [ -f "${PLUGINS_DIR}/Essentials/Essentials.dll" ]; then
+    echo "✓ Essentials plugin already installed"
+  else
+    echo "Installing Essentials plugin from TorchAPI..."
+    ESSENTIALS_FILE="${PLUGINS_DIR}/Essentials.zip"
+    wget --timeout=30 --tries=3 -O "$ESSENTIALS_FILE" "https://torchapi.com/plugin/download/cbfdd6ab-4cda-4544-a201-f73efa3d46c0" 2>&1
+    if [ $? -eq 0 ] && [ -f "$ESSENTIALS_FILE" ] && [ -s "$ESSENTIALS_FILE" ]; then
       unzip -q -o "$ESSENTIALS_FILE" -d "${PLUGINS_DIR}/" && rm "$ESSENTIALS_FILE"
       echo "✓ Essentials plugin installed"
+    else
+      echo "✗ Failed to download Essentials plugin (will retry next start)"
+      rm -f "$ESSENTIALS_FILE"
     fi
-  else
-    echo "✓ Essentials plugin already installed"
   fi
 fi
 

@@ -194,36 +194,39 @@ Should return your public IP address.
 
 ## Plugin Installation
 
-### Automated Installation (Performance Improvements)
+### Automated Installation (All Plugins)
 
-The **Performance Improvements** plugin is automatically downloaded from GitHub releases when:
-- `INSTALL_PERFORMANCE_IMPROVEMENTS=true` in docker-compose.yml (default)
-- Plugin is not already installed
+✅ **All plugins are automatically downloaded** when enabled in docker-compose.yml!
+
+**Default Configuration:**
+- **Concealment**: ✅ Enabled by default (`INSTALL_CONCEALMENT=true`)
+- **Performance Improvements**: ✅ Enabled by default (`INSTALL_PERFORMANCE_IMPROVEMENTS=true`)
+- **Essentials**: ❌ Disabled by default (`INSTALL_ESSENTIALS=false`)
 
 No manual steps needed! Just start the container and check logs:
 ```bash
-docker logs -f se-server | grep "Performance Improvements"
+docker logs -f se-server | grep -E "Concealment|Performance|Essentials"
 ```
 
-### Manual Installation (Other Plugins)
+**Expected Output:**
+```
+✓ Concealment plugin installed
+✓ Performance Improvements plugin installed
+✓ Essentials plugin already installed
+```
 
-Since TorchAPI download URLs are currently broken (404 errors), other plugins must be installed manually:
+### Manual Installation (Optional)
 
-#### Concealment Plugin (Performance Critical)
-1. Visit: https://torchapi.com/plugins/view/17f44521-b77a-4e85-810f-ee73311cf75d
-2. Download the ZIP when TorchAPI is back online
-3. Extract to: `/tank/docker/space-engineers/instances/SE/Plugins/`
-4. Restart container: `docker restart se-server`
+Only needed if automatic download fails or for custom plugins:
 
-**Alternative:** Check the plugin's GitHub page or SE Mods Discord for direct downloads
+1. Download plugin ZIP from [TorchAPI.com/plugins](https://torchapi.com/plugins)
+2. Extract to: `/tank/docker/space-engineers/instances/SE/Plugins/`
+3. Restart container: `docker restart se-server`
 
-#### Other Plugins
-1. Visit https://torchapi.com/plugins
-2. Find the plugin page
-3. Look for GitHub links in the description
-4. Download from GitHub releases or TorchAPI (when available)
-5. Extract to the Plugins folder: `/tank/docker/space-engineers/instances/SE/Plugins/`
-6. Restart the container
+**Plugin URLs:**
+- Concealment: `https://torchapi.com/plugin/download/17f44521-b77a-4e85-810f-ee73311cf75d`
+- Performance Improvements: `https://torchapi.com/plugin/download/c2cf3ed2-c6ac-4dbd-ab9a-613a1ef67784`
+- Essentials: `https://torchapi.com/plugin/download/cbfdd6ab-4cda-4544-a201-f73efa3d46c0`
 
 ## Monitoring Tools
 
