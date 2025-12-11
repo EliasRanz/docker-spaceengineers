@@ -30,6 +30,14 @@ env_to_xml_element() {
         print result
     }')
     
+    # Handle special cases where XML uses all-caps acronyms
+    case "$xml_element" in
+        GroupId) xml_element="GroupID" ;;
+        Ip) xml_element="IP" ;;
+        TotalPcu) xml_element="TotalPCU" ;;
+        PiratePcu) xml_element="PiratePCU" ;;
+    esac
+    
     echo "${xml_path}/${xml_element}"
 }
 

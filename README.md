@@ -13,6 +13,11 @@ I took parts of their projects to create this one (see credits)
 - ✅ Signed container images with cosign
 - 🐧 Runs on Linux with Wine
 
+## Documentation
+
+- 📋 [SERVER-STATUS.md](SERVER-STATUS.md) - How to check if your server is running and troubleshooting
+- ⚙️ [CONFIGURATION.md](CONFIGURATION.md) - Complete environment variable reference
+
 ## Why?
 
 I wanted to have a more cleaner docker container with less dependencies (integrate sesrv-script parts instead of wget the whole script) and a little more configuration through composer files.
@@ -310,5 +315,13 @@ Sure, feel free to submit merge requests or issues if you have anything to impro
 
 ## Known issues
 
+- **Torch Plugin Downloads**
+  - TorchAPI.com plugin download URLs are currently returning 404 errors (as of December 2024)
+  - **Performance Improvements plugin**: ✅ **Automatically downloaded** from GitHub releases
+  - **Concealment plugin**: ⚠️ Manual installation required (not available on GitHub)
+    - Check [TorchAPI page](https://torchapi.com/plugins/view/17f44521-b77a-4e85-810f-ee73311cf75d) or SE Mods Discord
+  - Other plugins: Check [TorchAPI.com/plugins](https://torchapi.com/plugins) for GitHub links
+  - The server will start successfully without plugins (they're optional optimizations)
+  
 - **VRage Remote Client**
-  - I personally could not manage to connect with te remote client, if anyone gets a connection please tell me (and maybe how you fixed it) [see here](https://github.com/Devidian/docker-spaceengineers/issues/36)
+  - Connection issues reported - if you get it working, please share! [See issue](https://github.com/Devidian/docker-spaceengineers/issues/36)
