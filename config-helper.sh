@@ -63,8 +63,8 @@ update_config_value() {
     local new_value="$3"
     local env_var_name="$4"
     
-    # Check if element exists in config
-    if xmlstarlet sel -t -v "$xml_path" "$config_file" &>/dev/null; then
+    # Check if element exists in config (including empty elements)
+    if xmlstarlet sel -t -c "$xml_path" "$config_file" &>/dev/null; then
         # Element exists, update it
         xmlstarlet ed -L -u "$xml_path" -v "$new_value" "$config_file" 2>/dev/null
         
